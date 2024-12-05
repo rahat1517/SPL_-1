@@ -178,3 +178,51 @@ int findCommentStart(char arr[], int length){
         return -1;
     }
 }
+
+int validatePrintfFormate(char arr[], int length){
+    int percentCount = 0;
+    int commaCount = 0;
+    int quoteCount = 0;
+    int isError = 0;
+
+    for(int i = 0; i< length ; i++){
+        if(arr[i] == '%'){
+            percentCount ++;
+        }
+        if(arr[i] == ','){
+            commaCount ++;
+        }
+        if(arr[i] == '\"'){
+            quoteCount ++;
+        }
+    }
+
+    // check for mismatched '%' and ',' counts
+    if(percentCount!= commaCount){
+        isError = 1;
+    }
+    
+    // check for an odd number of double quotes
+    if(quoteCount % 2 != 0){
+        isError = 1;
+    }
+    return isError;
+}
+
+void calculateVariable(fileline lines[] , int numberOfLines){
+    char currentLine[100], token[100];
+    char dataTypes[6][10]= {"int","char","long","double","float","short"};
+    int totalVariables[6]= {0};
+    int memoryUsage[6] = {0};
+
+    for(int i = 0; i< numberOfLines ; i++){
+        int dataTypeIndex = 0;
+        int tokenIndex = 0;
+        strcpy(currentLine,lines[i].lineContent);
+        int lineLength = lines[i].lineLength;
+
+        for(int j =0; j< lineLength ; j++){
+            
+        }
+    }
+}
