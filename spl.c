@@ -1,228 +1,405 @@
 #include<stdio.h>
 #include<string.h>
 
-// Define the fileLine structure
 typedef struct{
     int lineNumber;
     int lineLength;
     char lineContent[1000];
-}fileline;
+} fileline;
 
-int readFile(fileline str[]);
-void printFile(fileline str[], int length);
+int readFile(fileline arr[]);
+int printcheck(char arr[] , int length);
+void printFile(fileline arr[], int length);
 int specialCharacter(char arr[], int size);
 int findCommentStart(char arr[], int length);
+int calculateLength(char *arr);
+int scancheck( char arr[] , int length);
+int fprintfcheck(char arr[] , int length);
+void varCount(fileline arr[], int len);
+int forcheck(char arr[], int size);
+//void checkFileLines(fileline arr[], int length);
+void checkFileFunctions(fileline arr[], int len);
+void countBuiltInFunctions(fileline arr[], int length);
 
 int main(){
 
+    int option;
    FILE *input;
-   fileline lines[100]; // Array to store details of lines
-   char buffer[100]; // Temporary buffer to read a line
-   int lineCount = 0; // Count of processed line
+   fileline lines[100]; 
+   char buffer[100]; 
+   int lineCount = 0; 
 
-   // Open the input file
-   input = fopen("input.txt","r");
-   if(input== NULL){
-    printf("Error : Could not open file.\n");
-    return 1; // Exit if file cannot be opended
+   input = fopen("input.txt.txt","r");
+   if(input == NULL){
+       printf("Error : Could not open file.\n");
+       return 1;
    }
 
-   //Process the file line by line
-   while(fgets(buffer,100,input)!= NULL){
-        int length = calculateLength(buffer);  // Get the length of the line
-        int commentPos = findCommentStart(buffer, length); // Find the position "//" if present
+   while(fgets(buffer, 100, input) != NULL) {
+       int length = calculateLength(buffer);  
+       int commentPos = findCommentStart(buffer, length); 
 
-        // skip empty lines
-        if(buffer[0] == '\n'){
-            continue;
-        }
+       if(buffer[0] == '\n'){
+           continue;
+       }
 
-        //Populate the fileLine structure for the current line
-        lines[lineCount].lineNumber = lineCount + 1; //Line Number
+       lines[lineCount].lineNumber = lineCount + 1; 
 
-        if(commentPos == -1){
-            // No Comment Found, store entire line
-            lines[lineCount].lineLength = length;
-            strcpy(lines[lineCount].lineContent,buffer);
-        }
-        else{
-            // Comment found
-            strncpy(lines[lineCount].lineContent,buffer,commentPos);
-            lines[lineCount].lineContent[commentPos] = '\n'; // Add newline
-            lines[lineCount].lineContent[commentPos + 1] = '\0'; // null terminated
-            lines[lineCount].lineLength = strlen(lines[lineCount].lineContent);
-        }
-        
-        lineCount ++; // Move to the next line
-
+       if(commentPos == -1){
+           
+           lines[lineCount].lineLength = length;
+           strcpy(lines[lineCount].lineContent, buffer);
+       } else {
+           
+           strncpy(lines[lineCount].lineContent, buffer, commentPos);
+           lines[lineCount].lineContent[commentPos] = '\n'; 
+           lines[lineCount].lineContent[commentPos + 1] = '\0'; 
+           lines[lineCount].lineLength = strlen(lines[lineCount].lineContent);
+       }
+       
+       lineCount++; 
    }
 
-   fclose(input); // close the file
-   printf("Processed Lines:\n");
-    for (int i = 0; i < lineCount; i++) {
-        printf("Line %d (Length %d): %s", 
-               lines[i].lineNumber, 
-               lines[i].lineLength, 
-               lines[i].lineContent);
-    }
+   fclose(input); 
 
+   printf("\n __________________________________________________\n|");
+   printf("          Syntax Checker - Main Menu             |\n");
+   printf("|-------------------------------------------------|\n");
+   printf("| 1. Check Syntax                                 |\n");
+   printf("| 2. View Errors                                  |\n");
+   printf("| 3. Analyze Code                                 |\n");
+   printf("| 4. Exit                                         |\n");
+   printf("|_________________________________________________|\n");
 
+   printf("What do you want? Please choose an option\n");
 
+   scanf("%d",&option);
 
+   switch (option)
+   {
+   case 1:
+        printf("You Selected: Check Syntax\n");
+        //checkFileLines(lines, lineCount);
+        checkFileFunctions(lines, lineCount);
+        break;
 
-    printf("\n __________________________________________________\n|");
-    printf("          Syntax Checker - Main Menu             |\n");
-    printf("|-------------------------------------------------|\n");
-    printf("| 1. Check Syntax                                 |\n");
-    printf("| 2. View Errors                                  |\n");
-    printf("| 3. Analysis Code                                |\n");
-    printf("| 4. Exit                                         |\n");
-    printf("|_________________________________________________|\n");
+    case 2:
+        printf("You Selected: View Errors\n");
+        break;
 
-    
-    
-    
+    case 3:
+        printf("You Selected: Analyze Code\n");
+
+        countBuiltInFunctions(lines, lineCount);
+
+        printf("\nProcessed Lines:\n");
+
+        for (int i = 0; i < lineCount; i++) {
+             printf("Line %d (Length %d): %s", 
+              lines[i].lineNumber, 
+              lines[i].lineLength, 
+              lines[i].lineContent);
+        }
+        break;
+
+    case 4:
+        printf("Exiting the program. Allah Hafez!\n");
+        break;
+   
+    default:
+        printf("Invalid Option. Please Choose a valid option from the menu\n");
+        break;
+   }
+   printf("Total VAriable: ");
+   
+
+   return 0;
 }
 
 // Function to calculate the length of a string
-int calculateLength(char *str){
+int calculateLength(char *arr){
     int length = 0;
-    while(str[length] != NULL){
+    while(arr[length] != '\0'){
         length++;
     }
     return length;
 }
 
-//Function to calculate the size of a buffer
-int getBufferSize(char *buffer){
-    int size = 0;
-    while(buffer[size] != NULL){
-        size++;
-    }
-    return size;
-}
-
-int readFile(fileline str[]){
-
-    FILE *fptr;
-    char temp[1000];
-    int lineCount = 0;
-
-    fptr = fopen("input.txt","r");
-    if(fptr == NULL){
-        printf("Error Openning File.\n");
-        return ;
-    }
-
-    while(fgets(temp,1000,fptr)!= NULL){
-        str[lineCount].lineNumber = lineCount + 1;
-        str[lineCount].lineLength = strlen(temp);
-        strcpy(str[lineCount].lineContent,temp);
-        lineCount++ ;
-
-    }
-    fclose(fptr);
-    return lineCount;
-}
-
-void printFile(fileline str[] , int length){
-
-    FILE *fptr;
-    int i;
-    fptr = fopen("output.txt","w");
-    if(fptr == NULL){
-        printf("Error Opening File.\n");
-        return;
-    }
-
-    for(i =0; i<length; i++){
-        fprintf(fptr, "line %d [%d] : %s",str[i].lineNumber,str[i].lineLength,str[i].lineContent);
-    }
-    fclose(fptr);
-}
-
-int specialCharacter(char arr[], int size){
-    int count = 0;
-    int i;
-    for(i = 0; i<size; i++){
-        if(arr[i]=='%'){
-            count =1;
-        }
-        if(arr[i]==','){
-            count =1;
-        }
-        if(arr[i]=='\"'){
-            count =1;
-        }
-        if(arr[i]=='\''){
-            count =1;
-        }
-        if(arr[i]=='&'){
-            count =1;
-        }
-    }
-    return count;
-}
-
 int findCommentStart(char arr[], int length){
-    
-    int found = 0;
-    int i ;
-    for(i =0; !found && i<length ; i++){
-        if(arr[i] =='/' && arr[i+1]=='/'){
+    for(int i = 0; i < length - 1; i++) {
+        if(arr[i] == '/' && arr[i + 1] == '/'){
             return i;
-            found = 1;
         }
     }
-    if(!found){
-        return -1;
-    }
+    return -1;
 }
 
-int validatePrintfFormate(char arr[], int length){
+// Function to count built-in functions
+void countBuiltInFunctions(fileline arr[], int length){
+    char currentLine[1000], wordBuffer[100];
+    char builtInFunctions[30][10] = {"printf", "scanf", "gets", "puts", "fscanf", "fprintf", "fgets", "fputs", "fputc", "fgetc", "fopen", "fclose", "feof", "fflush", "malloc", "calloc", "rand", "strcmp", "strlen", "strcpy", "strncpy", "strncmp", "tolower", "toupper", "strrev", "getch", "strcat",  "strncat", "sqrt", "pow"};
+    int builtInCount = 0;
+
+    for (int lineIndex = 0; lineIndex < length; lineIndex++) {
+        strcpy(currentLine, arr[lineIndex].lineContent);
+        int bufferIndex = 0;
+
+        for (int charIndex = 0; charIndex <= arr[lineIndex].lineLength; charIndex++) {
+            if (currentLine[charIndex] == ' ' || currentLine[charIndex] == '(' || 
+                currentLine[charIndex] == '\0' || currentLine[charIndex] == '\n' || 
+                currentLine[charIndex] == '\t') {
+
+                if (bufferIndex > 0) {
+                    wordBuffer[bufferIndex] = '\0'; 
+                    for (int functionIndex = 0; functionIndex < 30; functionIndex++) {
+                        if (strcmp(wordBuffer, builtInFunctions[functionIndex]) == 0) {
+                            builtInCount++;
+                        }
+                    }
+                    bufferIndex = 0; 
+                }
+            } else {
+                wordBuffer[bufferIndex] = currentLine[charIndex];
+                bufferIndex++;
+            }
+        }
+    }
+
+   printf("\nTotal Built-in Functions: %d\n", builtInCount);
+}
+
+int printcheck(char arr[], int length) {
+    
+    int pcount = 0;
+    int ccount = 0;
+    int icount = 0;
+    int f = 0 ;
+
+    for( int i = 0; i< length ; i++){
+        if( arr[i] == '%'){
+            pcount ++;
+        }
+        if(arr[i] == ','){
+            ccount ++;
+        }
+        if(arr[i] == '\"'){
+            icount ++;
+        }
+    }
+
+    if(pcount != ccount){
+        f =1;
+    }
+    if(icount % 2 != 0){
+        f =1;
+    }
+
+    return f;
+}
+
+int checkWhileLoopSyntax(char arr[] , int length){
+
+    int semicolonFlag = 0;
+    int singleQuoteCount = 0;
+    int doubleQuoteCount = 0;
+
+    for(int i = 0; i < length; i++){
+        if(arr[i]== ';'){
+            semicolonFlag = 1;
+        }
+
+        if(arr[i] =='\''){
+            singleQuoteCount++;
+        }
+
+        if(arr[i] == '"'){
+            doubleQuoteCount++;
+        }
+
+        if(singleQuoteCount % 2 != 0 || doubleQuoteCount % 2 != 0){
+            semicolonFlag = 1;
+        }
+    }
+
+    return semicolonFlag;
+}
+
+void checkFileFunctions(fileline arr[], int len) {
+    
+    const char keywords[8][10] = {"printf", "scanf", "gets", "puts", "fscanf", "fprintf", "for", "while"};
+    char word[100];
+    char line[100];
+
+    for (int i = 0; i < len; i++) {
+        strcpy(line, arr[i].lineContent);
+        int wordIndex = 0;               
+
+        for (int j = 0; j <= arr[i].lineLength; j++) {
+            
+            if (line[j] == ' ' || line[j] == '(' || line[j] == '\0' || line[j] == '\t') {
+                word[wordIndex] = '\0'; // 
+
+                
+                for (int k = 0; k < 8; k++) {
+                    if (strcmp(word, keywords[k]) == 0) {
+                        int errorFlag = 0;
+
+                        if (strcmp(word, "printf") == 0) {
+                            errorFlag = printcheck(line, arr[i].lineLength);
+                        } 
+    
+                       else if (strcmp(word, "scanf") == 0) {
+                            errorFlag = scancheck(line, arr[i].lineLength);
+                        }
+                        
+                        else if (strcmp(word, "fprintf") == 0) {
+                            errorFlag = fprintfcheck(line, arr[i].lineLength);
+                        } 
+
+                         else if (strcmp(word, "for") == 0) {
+                            errorFlag = forcheck(line, arr[i].lineLength);
+                        } 
+
+                        else if (strcmp(word, "while") == 0) {
+                            errorFlag = checkWhileLoopSyntax(line, arr[i].lineLength);
+                        } 
+
+                        /*else if (strcmp(word, "gets") == 0) {
+                            errorFlag = getscheck(line, arr[i].lineLength);
+                        } 
+
+                        else if (strcmp(word, "puts") == 0) {
+                            errorFlag = putscheck(line, arr[i].lineLength);
+                        }
+
+                        else if (strcmp(word, "fscanf") == 0) {
+                            errorFlag = fscanfcheck(line, arr[i].lineLength);
+                        } 
+
+                        
+
+                         */
+
+                        if (errorFlag) {
+                            printf("Error in '%s' statement ---> Line no: %d\n", word, arr[i].lineNumber);
+                        } 
+                    }
+                }
+
+                wordIndex = 0; 
+            } 
+            else {
+                word[wordIndex++] = line[j]; 
+            }
+        }
+    }
+} 
+
+int scancheck(char arr[] , int length){
+
     int percentCount = 0;
     int commaCount = 0;
     int quoteCount = 0;
-    int isError = 0;
+    int ampersandCount = 0;
+    int percentSCount = 0;
+    int isValid = 0;
+    int i;
 
-    for(int i = 0; i< length ; i++){
-        if(arr[i] == '%'){
-            percentCount ++;
+    for( i = 0; i< length ; i++){
+        if(arr[i] =='%'){
+            percentCount++;
+
+            if(i+1 < length && arr[i+1] == 's'){
+                percentSCount++;
+            }
         }
-        if(arr[i] == ','){
-            commaCount ++;
+        
+        else if(arr[i] == ','){
+            commaCount++;
         }
-        if(arr[i] == '\"'){
-            quoteCount ++;
+
+        else if(arr[i] == '"'){
+            quoteCount++;
+        }
+
+        else if(arr[i] == '&'){
+            ampersandCount++;
         }
     }
 
-    // check for mismatched '%' and ',' counts
-    if(percentCount!= commaCount){
-        isError = 1;
+    if(percentCount != commaCount){
+        isValid = 1;
     }
-    
-    // check for an odd number of double quotes
-    if(quoteCount % 2 != 0){
-        isError = 1;
+
+    if(quoteCount %2 != 0){
+        isValid = 1;
     }
-    return isError;
+
+    if((percentCount - percentSCount) != ampersandCount){
+        isValid = 1;
+    }
+
+    return isValid;
 }
 
-void calculateVariable(fileline lines[] , int numberOfLines){
-    char currentLine[100], token[100];
-    char dataTypes[6][10]= {"int","char","long","double","float","short"};
-    int totalVariables[6]= {0};
-    int memoryUsage[6] = {0};
+int fprintfcheck(char arr[] , int length){
 
-    for(int i = 0; i< numberOfLines ; i++){
-        int dataTypeIndex = 0;
-        int tokenIndex = 0;
-        strcpy(currentLine,lines[i].lineContent);
-        int lineLength = lines[i].lineLength;
+    int pcount = 0;
+    int ccount = 0;
+    int icount = 0;
+    int f = 0;
+    int i ;
 
-        for(int j =0; j< lineLength ; j++){
-            
+    for( i = 0; i < length ; i++){
+        
+        if(arr[i] == '%'){
+            pcount++;
+        }
+
+        if(arr[i]==','){
+            ccount++;
+        }
+
+        if(arr[i] = '\"'){
+            icount++;
+        }
+
+    }
+
+    if(pcount != ccount - 1){
+        f = 1;
+    }
+
+    if(icount % 2 !=0){
+        f = 1;
+    }
+
+    return f;
+}
+
+int forcheck(char arr[], int size) {
+    int semicolonCount = 0;  
+    int quoteCount = 0;      
+    int errorFlag = 0;       
+
+    for (int i = 0; i < size; i++) {
+        
+        if (arr[i] == ';') {
+            semicolonCount++;
+        }
+        
+        if (arr[i] == '\'') {
+            quoteCount++;
         }
     }
+
+    if (semicolonCount != 2) {
+        errorFlag = 1;
+    }
+
+    if (quoteCount % 2 != 0) {
+        errorFlag = 1;
+    }
+
+    return errorFlag;
 }
