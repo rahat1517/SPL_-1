@@ -8,6 +8,7 @@ typedef struct{
 } fileline;
 
 int readFile(fileline arr[]);
+void keyword(fileline arr[], int len);
 int printcheck(char arr[] , int length);
 void printFile(fileline arr[], int length);
 int specialCharacter(char arr[], int size);
@@ -110,7 +111,8 @@ int main(){
         printf("Invalid Option. Please Choose a valid option from the menu\n");
         break;
    }
-   printf("Total VAriable: ");
+   printf("\n\n\n\t\t\tKEYWORDS with LINE NUMBER\n\n\n");
+	keyword(lines,lineCount);
    
 
    return 0;
@@ -391,6 +393,103 @@ int forcheck(char arr[], int size) {
         if (arr[i] == '\'') {
             quoteCount++;
         }
+
+        if(arr[i] =='f' && arr[i+1] == 'o' && arr[i+2] != 'r'){
+        errorFlag = 1;
+        }
+
+        else if(arr[i] != 'f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] != '('){
+            errorFlag = 1;
+        }
+
+        else if(arr[i] == 'f' && arr[i+1] != 'o' && arr[i+2] == 'r' && arr[i+3] != '('){
+            errorFlag = 1;
+        }
+
+        else if(arr[i] == 'f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] != ' '){
+            errorFlag = 1;
+        }
+
+        else if(arr[i] != 'f' && arr[i+1] == 'o' && arr[i+2] != 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] != 'i'){
+            errorFlag = 1;
+        }
+
+        else if(arr[i] == 'f' && arr[i+1] != 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] != 'i'){
+            errorFlag = 1;
+        }   
+
+        else if(arr[i] == 'f' && arr[i+1] == 'o' && arr[i+2] != 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] != 'i'){
+            errorFlag = 1;
+        }
+
+        if(arr[i] == 'f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] != 'n'){
+            errorFlag = 1;
+        }
+
+        if(arr[i] == 'f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] != 't'){
+            errorFlag = 1;
+        }
+
+        if(arr[i] == 'f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] == 't' && arr[i+8] != ' '){
+            errorFlag = 1;
+        }
+
+        if(arr[i]=='f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] == 't' && arr[i+8] == ' ' && arr[i+9] != 'i'){
+            errorFlag = 1;
+        }  
+
+        if(arr[i] == 'f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] == 't' && arr[i+8] == ' ' && arr[i+9] != 'i'){
+            errorFlag = 1;
+        }
+
+        if(arr[i] == 'f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] == 't' && arr[i+8] == ' ' && arr[i+9] == 'i' && arr[i+10] != ' '){
+            errorFlag = 1;
+        }
+
+        if(arr[i] == 'f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] == 't' && arr[i+8] == ' ' && arr[i+9] == 'i' && arr[i+10] == ' ' && arr[i+11] != '=' ){
+            errorFlag = 1;
+        }
+
+        if(arr[i] == 'f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] == 't' && arr[i+8] == ' ' && arr[i+9] == 'i' && arr[i+10] == ' ' && arr[i+11] == '=' && arr[i+12] != '0'){
+            errorFlag = 1;
+        }
+
+        if(arr[i] == 'f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] == 't' && arr[i+8] == ' ' && arr[i+9] == 'i' && arr[i+10] == ' ' && arr[i+11] == '=' && arr[i+12] == '0' && arr[i+13] != ';' ){
+            errorFlag = 1;
+        }
+
+        if(arr[i]=='f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] == 't' && arr[i+8] == ' ' && arr[i+9] == 'i' && arr[i+10] == ' ' && arr[i+11] == '=' && arr[i+12] == '0' && arr[i+13] == ';' && arr[i+14] != 'i'){
+            errorFlag = 1;
+        }
+
+        if(arr[i]=='f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] == 't' && arr[i+8] == ' ' && arr[i+9] == 'i' && arr[i+10] == ' ' && arr[i+11] == '=' && arr[i+12] == '0' && arr[i+13] == ';' && arr[i+14] == 'i' && arr[i+15] != '<'){
+            errorFlag = 1;
+        }
+
+        if(arr[i]=='f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] == 't' && arr[i+8] == ' ' && arr[i+9] == 'i' && arr[i+10] == ' ' && arr[i+11] == '=' && arr[i+12] == '0' && arr[i+13] == ';' && arr[i+14] == 'i' && arr[i+15] == '<' && arr[i+16] != 'n'){
+            errorFlag = 1;
+        }
+
+        if(arr[i]=='f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] == 't' && arr[i+8] == ' ' && arr[i+9] == 'i' && arr[i+10] == ' ' && arr[i+11] == '=' && arr[i+12] == '0' && arr[i+13] == ';' && arr[i+14] == 'i' && arr[i+15] == '<' && arr[i+16] == 'n' && arr[i+17] != ';'){
+            errorFlag = 1;
+        }
+
+        if(arr[i]=='f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] == 't' && arr[i+8] == ' ' && arr[i+9] == 'i' && arr[i+10] == ' ' && arr[i+11] == '=' && arr[i+12] == '0' && arr[i+13] == ';' && arr[i+14] == 'i' && arr[i+15] == '<' && arr[i+16] == 'n' && arr[i+17] == ';' && arr[i+18] != 'i'){
+            errorFlag = 1;
+        }
+
+        if(arr[i]=='f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] == 't' && arr[i+8] == ' ' && arr[i+9] == 'i' && arr[i+10] == ' ' && arr[i+11] == '=' && arr[i+12] == '0' && arr[i+13] == ';' && arr[i+14] == 'i' && arr[i+15] == '<' && arr[i+16] == 'n' && arr[i+17] == ';' && arr[i+18] == 'i' && arr[i+19] != ' '){
+            errorFlag = 1;
+        }
+
+        if(arr[i]=='f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] == 't' && arr[i+8] == ' ' && arr[i+9] == 'i' && arr[i+10] == ' ' && arr[i+11] == '=' && arr[i+12] == '0' && arr[i+13] == ';' && arr[i+14] == 'i' && arr[i+15] == '<' && arr[i+16] == 'n' && arr[i+17] == ';' && arr[i+18] == 'i' && arr[i+19] == ' ' && arr[i+20] != 'i'){
+            errorFlag = 1;
+        }
+
+        if(arr[i]=='f' && arr[i+1] == 'o' && arr[i+2] == 'r' && arr[i+3] == '(' && arr[i+4] == ' ' && arr[i+5] == 'i' && arr[i+6] == 'n' && arr[i+7] == 't' && arr[i+8] == ' ' && arr[i+9] == 'i' && arr[i+10] == ' ' && arr[i+11] == '=' && arr[i+12] == '0' && arr[i+13] == ';' && arr[i+14] == 'i' && arr[i+15] == '<' && arr[i+16] == 'n' && arr[i+17] == ';' && arr[i+18] == 'i' && arr[i+19] == ' ' && arr[i+20] == 'i' && arr[i+21] != ' '){
+            errorFlag = 1;
+        }
+
     }
 
     if (semicolonCount != 2) {
@@ -400,6 +499,44 @@ int forcheck(char arr[], int size) {
     if (quoteCount % 2 != 0) {
         errorFlag = 1;
     }
-
+    
     return errorFlag;
+}
+
+void keyword(fileline arr[], int len) {
+    
+    char keywords[32][10] = {
+        "auto", "double", "int", "struct", "break", "else", "long", "switch",
+        "case", "enum", "register", "typedef", "char", "extern", "return", "union",
+        "const", "float", "short", "unsigned", "continue", "for", "signed", "void",
+        "default", "goto", "sizeof", "volatile", "do", "if", "static", "while"
+    };
+    char str[100], word[100];
+        int k = 0; 
+    
+    
+    for (int i = 0; i < len; i++) {
+        
+        strcpy(str, arr[i].lineContent);
+
+        for (int j = 0; j <= arr[i].lineLength; j++) {
+            
+            if (str[j] == ' ' || str[j] == '(' || str[j] == '\t' || str[j] == '\0') {
+                if (k > 0) { 
+                    word[k] = '\0'; 
+                    
+                    
+                    for (int l = 0; l < 32; l++) {
+                        if (strcmp(word, keywords[l]) == 0) {
+                            printf("Line %d: %s\n", arr[i].lineNumber, word);
+                        }
+                    }
+                    k = 0; 
+                }
+            } else {
+            
+                word[k++] = str[j];
+            }
+        }
+    }
 }
