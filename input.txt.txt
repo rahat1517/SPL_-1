@@ -1,9 +1,13 @@
 #include<stdio.h>
 int main(){
 	int a = 10;
+	int n;
 	char a = 'd';
-	scanf("%d,d);
+	
+	Scanf("%d",&a);
+	scannn("%d)
+	Printf("%d",a);
 	for(int i =0 ; i<n; i++){
-	printf("%d,a);
+	print("scanf");
 }
 }

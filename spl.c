@@ -1,5 +1,9 @@
 #include<stdio.h>
 #include<string.h>
+#include<ctype.h>
+#include<stdlib.h>
+
+#define MAX_LINE_LENGTH 1024
 
 typedef struct{
     int lineNumber;
@@ -8,13 +12,14 @@ typedef struct{
 } fileline;
 
 int readFile(fileline arr[]);
+//int scanfCheck(char arr[], int length);
 void keyword(fileline arr[], int len);
 int printcheck(char arr[] , int length);
 void printFile(fileline arr[], int length);
 int specialCharacter(char arr[], int size);
 int findCommentStart(char arr[], int length);
 int calculateLength(char *arr);
-int scancheck( char arr[] , int length);
+//int scancheck( char arr[] , int length);
 int fprintfcheck(char arr[] , int length);
 void varCount(fileline arr[], int len);
 int forcheck(char arr[], int size);
@@ -22,19 +27,129 @@ int forcheck(char arr[], int size);
 void checkFileFunctions(fileline arr[], int len);
 void countBuiltInFunctions(fileline arr[], int length);
 
-int main(){
+void to_lowercase(char *str) {
+    for (int i = 0; str[i]; i++) {
+        str[i] = tolower(str[i]);
+    }
+}
 
+
+
+void check_scanf_errors(const char *line, int line_number) {
+    char temp[MAX_LINE_LENGTH];
+    strcpy(temp, line);
+    to_lowercase(temp);
+
+    if (strstr(temp, "scanf") != NULL || strstr(temp, "scanff") != NULL || strstr(temp, "sanf") != NULL || strstr(temp, "scnaf") != NULL || strstr(temp, "scaanff") != NULL || strstr(temp, "sCnff") != NULL || strstr(temp, "scnfffff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scannn") != NULL) {
+        if (strstr(line, "scanf") == NULL) {
+            printf("Error: 'scanf' is case-sensitive, incorrect usage at line %d\n", line_number);
+            printf("Fix: Use 'scanf' in lowercase.\n");
+        }
+        if (strstr(temp, "scanf") == NULL) {
+            printf("Error: Possible misspelling of 'scanf' at line %d\n", line_number);
+            printf("Fix: Correct spelling to 'scanf'.\n");
+        }
+        if (strstr(line, "\"") == NULL) {
+            printf("Error: Missing format specifier in scanf at line %d\n", line_number);
+            printf("Fix: Add a format specifier like \"%%d\", \"%%f\", etc.\n");
+        }
+        if (strstr(line, "&") == NULL && strstr(line, "%d") != NULL) {
+            printf("Warning: Missing '&' for integer variable in scanf at line %d\n", line_number);
+            printf("Fix: Use '&' before the variable (e.g., &var).\n");
+        }
+        int openParen = 0, closeParen = 0;
+        for (int i = 0; i < strlen(line); i++) {
+            if (line[i] == '(') openParen++;
+            if (line[i] == ')') closeParen++;
+        }
+        if (openParen != closeParen) {
+            printf("Error: Mismatched parentheses in scanf at line %d\n", line_number);
+            printf("Fix: Ensure correct '(' and ')' usage.\n");
+        }
+        int len = strlen(line);
+        if (len > 0 && line[len - 2] != ';' && line[len - 1] != ';') {
+            printf("Warning: Missing semicolon at the end of scanf statement at line %d\n", line_number);
+            printf("Fix: Add ';' at the end.\n");
+        }
+        if (strstr(line, "%d") != NULL && strstr(line, "float") != NULL) {
+            printf("Warning: Using '%%d' for float at line %d\n", line_number);
+            printf("Fix: Use '%%f' for float variables.\n");
+        }
+        if (strstr(line, "%f") != NULL && strstr(line, "int") != NULL) {
+            printf("Warning: Using '%%f' for int at line %d\n", line_number);
+            printf("Fix: Use '%%d' for int variables.\n");
+        }
+
+    }
+}
+
+void check_printf_errors(const char *line, int line_number) {
+    char temp[MAX_LINE_LENGTH];
+    strcpy(temp, line);
+    to_lowercase(temp);
+
+    if (strstr(temp, "printf") != NULL || strstr(temp, "printff") != NULL || strstr(temp, "prntf") != NULL || strstr(temp,"print") != NULL || strstr(temp,"prnt") != NULL || strstr(temp,"prntf") != NULL || strstr(temp,"prntff") != NULL || strstr(temp,"prntfff") != NULL || strstr(temp,"prntffff")) {
+        if (strstr(line, "printf") == NULL) {
+            printf("Error: 'printf' is case-sensitive, incorrect usage at line %d\n", line_number);
+            printf("Fix: Use 'printf' in lowercase.\n");
+        }
+        if (strstr(line, "\"") == NULL) {
+            printf("Error: Missing format specifier in printf at line %d\n", line_number);
+            printf("Fix: Add a format specifier like \"%%d\", \"%%f\", etc.\n");
+        }
+        int openParen = 0, closeParen = 0;
+        for (int i = 0; i < strlen(line); i++) {
+            if (line[i] == '(') openParen++;
+            if (line[i] == ')') closeParen++;
+        }
+        if (openParen != closeParen) {
+            printf("Error: Mismatched parentheses in printf at line %d\n", line_number);
+            printf("Fix: Ensure correct '(' and ')' usage.\n");
+        }
+        if (line[strlen(line) - 2] != ';' && line[strlen(line) - 1] != ';') {
+            printf("Warning: Missing semicolon at the end of printf statement at line %d\n", line_number);
+            printf("Fix: Add ';' at the end.\n");
+        }
+    }
+}
+
+
+int main(){
+    
     int option;
-   FILE *input;
-   fileline lines[100]; 
-   char buffer[100]; 
-   int lineCount = 0; 
+    FILE *input;
+    fileline lines[100]; 
+    char buffer[MAX_LINE_LENGTH]; 
+    int lineCount = 0; 
 
    input = fopen("input.txt.txt","r");
    if(input == NULL){
        printf("Error : Could not open file.\n");
        return 1;
    }
+
+   printf("\nChecking for scanf and printf-related errors...\n");
+
+    while (fgets(buffer, MAX_LINE_LENGTH, input) != NULL) {
+        if (buffer[0] == '\n') continue;
+        
+        lines[lineCount].lineNumber = lineCount + 1;
+        lines[lineCount].lineLength = strlen(buffer);
+        strcpy(lines[lineCount].lineContent, buffer);
+
+        // Check for errors
+        check_scanf_errors(buffer, lineCount + 1);
+        check_printf_errors(buffer, lineCount + 1);
+        
+        lineCount++;
+    }
+    
+
+    fclose(input);
+    printf("\nScan complete.\n");
+    
+    
+   
 
    while(fgets(buffer, 100, input) != NULL) {
        int length = calculateLength(buffer);  
@@ -250,9 +365,9 @@ void checkFileFunctions(fileline arr[], int len) {
                             errorFlag = printcheck(line, arr[i].lineLength);
                         } 
     
-                       else if (strcmp(word, "scanf") == 0) {
-                            errorFlag = scancheck(line, arr[i].lineLength);
-                        }
+                      /* else if (strcmp(word, "scanf") == 0) {
+                            errorFlag = scanfCheck(line, arr[i].lineLength);
+                        } */
                         
                         else if (strcmp(word, "fprintf") == 0) {
                             errorFlag = fprintfcheck(line, arr[i].lineLength);
@@ -297,52 +412,6 @@ void checkFileFunctions(fileline arr[], int len) {
     }
 } 
 
-int scancheck(char arr[] , int length){
-
-    int percentCount = 0;
-    int commaCount = 0;
-    int quoteCount = 0;
-    int ampersandCount = 0;
-    int percentSCount = 0;
-    int isValid = 0;
-    int i;
-
-    for( i = 0; i< length ; i++){
-        if(arr[i] =='%'){
-            percentCount++;
-
-            if(i+1 < length && arr[i+1] == 's'){
-                percentSCount++;
-            }
-        }
-        
-        else if(arr[i] == ','){
-            commaCount++;
-        }
-
-        else if(arr[i] == '"'){
-            quoteCount++;
-        }
-
-        else if(arr[i] == '&'){
-            ampersandCount++;
-        }
-    }
-
-    if(percentCount != commaCount){
-        isValid = 1;
-    }
-
-    if(quoteCount %2 != 0){
-        isValid = 1;
-    }
-
-    if((percentCount - percentSCount) != ampersandCount){
-        isValid = 1;
-    }
-
-    return isValid;
-}
 
 int fprintfcheck(char arr[] , int length){
 
