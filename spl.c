@@ -8,7 +8,7 @@
 typedef struct{
     int lineNumber;
     int lineLength;
-    char lineContent[1000];
+    char lineContent[MAX_LINE_LENGTH];
 } fileline;
 
 int readFile(fileline arr[]);
@@ -27,6 +27,115 @@ int forcheck(char arr[], int size);
 void checkFileFunctions(fileline arr[], int len);
 void countBuiltInFunctions(fileline arr[], int length);
 
+
+// Function to trim spaces
+void trim(char *str) {
+    int start = 0, end = strlen(str) - 1;
+    while (isspace((unsigned char)str[start])) start++;
+    while (end > start && isspace((unsigned char)str[end])) end--;
+    memmove(str, str + start, end - start + 1);
+    str[end - start + 1] = '\0';
+}
+
+// Function to check if 'for' is written with incorrect case
+int containsIncorrectFor(char *str) {
+    if (strncasecmp(str, "for", 3) == 0 && strncmp(str, "for", 3) != 0) {
+        return 1; // "for" exists, but incorrect case
+    }
+   /* if (strstr(str, "forr") != NULL || strstr(str, "foor") != NULL ||
+     strstr(str, "fOor") != NULL || strstr(str, "fOOr") != NULL || 
+     strstr(str, "fOOR") != NULL || strstr(str, "FOor") != NULL || 
+     strstr(str, "FOOr") != NULL || strstr(str, "FOOR") != NULL || 
+     strstr(str, "fOr") != NULL || strstr(str, "fOr") != NULL || 
+     strstr(str, "fOR") != NULL || strstr(str, "fOR") != NULL || strstr(str, "FOR") != NULL) {
+        return 1;
+    } */
+    if (strstr(str, "for") != NULL) {
+        return 1; // 'for' exists but incorrect (e.g., 'ffor', 'foR', etc.)
+    }
+    return 0;
+}
+
+// Function to check if a string contains invalid operators like "==="
+int containsInvalidOperators(char *str) {
+    if (strstr(str, "===") != NULL) {
+        return 1;
+    }
+    return 0;
+}
+
+// Function to check for loop syntax errors
+void checkForLoopErrors(char *code, int lineNum) {
+    char temp[MAX_LINE_LENGTH];
+    strcpy(temp, code);
+    trim(temp);
+
+    // Check if 'for' has incorrect case
+    if (containsIncorrectFor(temp)) {
+        printf("Error on line %d: Incorrect capitalization of 'for'. Use 'for' in lowercase.\n", lineNum);
+    }
+
+    // Check if 'for' is missing completely
+    if (strstr(temp, "for") == NULL) {
+        return;
+    }
+
+    // Check for missing parentheses
+    char *start = strchr(temp, '(');
+    char *end = strchr(temp, ')');
+    if (!start || !end || end < start) {
+        printf("Error on line %d: Missing or misplaced parentheses in 'for' loop.\n", lineNum);
+        return;
+    }
+
+    // Extract inside of for loop
+    char inside[MAX_LINE_LENGTH];
+    strncpy(inside, start + 1, end - start - 1);
+    inside[end - start - 1] = '\0';
+
+    // Split into three parts
+    char *part1 = strtok(inside, ";");
+    char *part2 = strtok(NULL, ";");
+    char *part3 = strtok(NULL, ";");
+
+    // Check if all three parts exist
+    if (!part1 || !part2 || !part3) {
+        printf("Error on line %d: DEclaration", lineNum);
+        return;
+    }
+
+    trim(part1);
+    trim(part2);
+    trim(part3);
+
+    // Check for invalid operators in initialization
+    if (containsInvalidOperators(part1)) {
+        printf("Error on line %d: Invalid operator '===' used in initialization.\n", lineNum);
+    }
+
+    // Check if initialization is missing or incorrect
+    if (strlen(part1) == 0) {
+        printf("Error on line %d: Missing initialization in 'for' loop.\n", lineNum);
+    } else if (!strchr(part1, '=')) {
+        printf("Error on line %d: Initialization is incorrect in 'for' loop.\n", lineNum);
+    }
+
+    // Check if condition is missing or incorrect
+    if (strlen(part2) == 0) {
+        printf("Error on line %d: Missing condition in 'for' loop (infinite loop risk).\n", lineNum);
+    } else if (!strpbrk(part2, "<>!=")) {
+        printf("Error on line %d: Condition is incorrect in 'for' loop (missing comparison operator).\n", lineNum);
+    }
+
+    // Check if increment is missing or incorrect
+    if (strlen(part3) == 0) {
+        printf("Error on line %d: Missing increment/decrement in 'for' loop.\n", lineNum);
+    } else if (!strpbrk(part3, "+-*/")) {
+        printf("Error on line %d: Increment/decrement is incorrect in 'for' loop.\n", lineNum);
+    }
+}
+
+
 void to_lowercase(char *str) {
     for (int i = 0; str[i]; i++) {
         str[i] = tolower(str[i]);
@@ -40,7 +149,37 @@ void check_scanf_errors(const char *line, int line_number) {
     strcpy(temp, line);
     to_lowercase(temp);
 
-    if (strstr(temp, "scanf") != NULL || strstr(temp, "scanff") != NULL || strstr(temp, "sanf") != NULL || strstr(temp, "scnaf") != NULL || strstr(temp, "scaanff") != NULL || strstr(temp, "sCnff") != NULL || strstr(temp, "scnfffff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL || strstr(temp, "scannn") != NULL) {
+    if (strstr(temp, "scanf") != NULL || strstr(temp, "scanff") != NULL 
+        || strstr(temp, "sanf") != NULL || strstr(temp, "scnaf") != NULL 
+        || strstr(temp, "scaanff") != NULL || strstr(temp, "sCnff") != NULL 
+        || strstr(temp, "scnff") != NULL || strstr(temp, "scnff") != NULL 
+        || strstr(temp, "SCANF") != NULL || strstr(temp, "scnff") != NULL 
+        || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL 
+        || strstr(temp, "scnff") != NULL || strstr(temp, "scAnff") != NULL 
+        || strstr(temp, "SCnfff") != NULL || strstr(temp, "scNFf") != NULL 
+        || strstr(temp, "SCANF") != NULL || strstr(temp, "sCANff") != NULL 
+        || strstr(temp, "SCANf") != NULL || strstr(temp, "scnaf") != NULL 
+        || strstr(temp, "sCaNf") != NULL || strstr(temp, "scnff") != NULL 
+        || strstr(temp, "scnff") != NULL || strstr(temp, "scnff") != NULL
+        || strstr(temp, "SCANF") != NULL || strstr(temp, "scnff") != NULL
+        || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL
+        || strstr(temp, "scnff") != NULL || strstr(temp, "scAnff") != NULL
+        || strstr(temp, "SCnfff") != NULL || strstr(temp, "scNFf") != NULL
+        || strstr(temp, "SCANF") != NULL || strstr(temp, "sCANff") != NULL
+        || strstr(temp, "SCANf") != NULL || strstr(temp, "scnaf") != NULL
+        || strstr(temp, "sCaNf") != NULL || strstr(temp, "scnff") != NULL
+        || strstr(temp, "scnff") != NULL || strstr(temp, "scnff") != NULL
+        || strstr(temp, "SCANF") != NULL || strstr(temp, "scnff") != NULL
+        || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL
+        || strstr(temp, "scnff") != NULL || strstr(temp, "scAnff") != NULL
+        || strstr(temp, "SCnfff") != NULL || strstr(temp, "scNFf") != NULL
+        || strstr(temp, "SCANF") != NULL || strstr(temp, "sCANff") != NULL
+        || strstr(temp, "SCANf") != NULL || strstr(temp, "scnaf") != NULL
+        || strstr(temp, "sCaNf") != NULL || strstr(temp, "scnff") != NULL
+        || strstr(temp, "scnff") != NULL || strstr(temp, "scnff") != NULL
+        || strstr(temp, "SCANF") != NULL || strstr(temp, "scnff") != NULL
+        || strstr(temp, "scnfff") != NULL || strstr(temp, "scnff") != NULL
+        || strstr(temp, "scnff") != NULL || strstr(temp, "scAnff") != NULL){
         if (strstr(line, "scanf") == NULL) {
             printf("Error: 'scanf' is case-sensitive, incorrect usage at line %d\n", line_number);
             printf("Fix: Use 'scanf' in lowercase.\n");
@@ -87,16 +226,359 @@ void check_printf_errors(const char *line, int line_number) {
     char temp[MAX_LINE_LENGTH];
     strcpy(temp, line);
     to_lowercase(temp);
+    
 
-    if (strstr(temp, "printf") != NULL || strstr(temp, "printff") != NULL || strstr(temp, "prntf") != NULL || strstr(temp,"print") != NULL || strstr(temp,"prnt") != NULL || strstr(temp,"prntf") != NULL || strstr(temp,"prntff") != NULL || strstr(temp,"prntfff") != NULL || strstr(temp,"prntffff")) {
-        if (strstr(line, "printf") == NULL) {
+    if (strstr(temp, "printf") != NULL || strstr(temp,"print")
+        || strstr(temp,"Primtf") != NULL || strstr(temp,"Print") != NULL
+        || strstr(temp,"prinf") != NULL || strstr(temp,"prinff") != NULL 
+        || strstr(temp,"prinfff") != NULL || strstr(temp,"prinffff") != NULL
+        || strstr(temp,"PRinf") != NULL || strstr(temp,"priff") != NULL
+        || strstr(temp,"PRINTF") != NULL || strstr(temp,"PRINT") != NULL 
+        || strstr(temp,"PRINFF") != NULL || strstr(temp,"PRINFFF") != NULL
+        || strstr(temp,"PRintf") != NULL || strstr(temp,"prinF") != NULL
+        || strstr(temp,"prinFf") != NULL || strstr(temp,"prinFff") != NULL
+        || strstr(temp,"prinFfff") != NULL || strstr(temp,"PRinF") != NULL
+        ||strstr(temp,"PrIntf") != NULL || strstr(temp,"prInF") != NULL
+        || strstr(temp,"prInFf") != NULL || strstr(temp,"prInFff") != NULL
+        || strstr(temp,"prInFfff") != NULL || strstr(temp,"PRInF") != NULL
+        || strstr(temp,"PrinTF") != NULL || strstr(temp,"prinTF") != NULL
+        || strstr(temp,"prinTFf") != NULL || strstr(temp,"prinTFff") != NULL
+        || strstr(temp,"prinTFfff") != NULL || strstr(temp,"PRinTF") != NULL
+        || strstr(temp,"PrIntF") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinTf") != NULL || strstr(temp,"prinTf") != NULL
+        || strstr(temp,"prinTff") != NULL || strstr(temp,"prinTfff") != NULL
+        || strstr(temp,"prinTffff") != NULL || strstr(temp,"PRinTf") != NULL
+        || strstr(temp,"PrIntf") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInTf") != NULL
+        || strstr(temp,"PrIntF") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"primtf") != NULL || strstr(temp,"PRInF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTF") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL
+        || strstr(temp,"prinTfff") != NULL || strstr(temp,"prinTffff") != NULL
+        || strstr(temp,"PRinT") != NULL || strstr(temp,"PrInt") != NULL
+        || strstr(temp,"prInT") != NULL || strstr(temp,"prInTf") != NULL
+        || strstr(temp,"prInTff") != NULL || strstr(temp,"prInTfff") != NULL
+        || strstr(temp,"prInTffff") != NULL || strstr(temp,"PRInT") != NULL
+        || strstr(temp,"PrInt") != NULL || strstr(temp,"prInTF") != NULL
+        || strstr(temp,"prInTFf") != NULL || strstr(temp,"prInTFff") != NULL
+        || strstr(temp,"prInTFfff") != NULL || strstr(temp,"PRInTF") != NULL
+        || strstr(temp,"PrinT") != NULL || strstr(temp,"prinT") != NULL
+        || strstr(temp,"prinTf") != NULL || strstr(temp,"prinTff") != NULL)  {
+    if (strstr(line, "printf") == NULL) {
             printf("Error: 'printf' is case-sensitive, incorrect usage at line %d\n", line_number);
             printf("Fix: Use 'printf' in lowercase.\n");
         }
-        if (strstr(line, "\"") == NULL) {
-            printf("Error: Missing format specifier in printf at line %d\n", line_number);
-            printf("Fix: Add a format specifier like \"%%d\", \"%%f\", etc.\n");
+
+        
+        
+        char *start = strchr(line, '"');  // Find first "
+        char *end = strrchr(line, '"');   // Find last "
+        if (start && end && start != end) { // Ensure valid format string
+            int contains_percent = strstr(start, "%") != NULL; 
+            char *after_quote = end + 1; 
+
+            // Detect missing comma after format string
+            if (after_quote && *after_quote != ')' && *after_quote != ';' && *after_quote != ',' && *after_quote != '\0') {
+                printf("Error: Missing comma between format string and arguments in printf at line %d\n", line_number);
+                printf("Fix: Add a comma after the format string.\n");
+            }
+
+            // Detect missing format specifier when arguments are present
+            char *comma = strchr(end, ',');
+            if (comma && !contains_percent) {
+                printf("Error: Missing format specifier in printf at line %d\n", line_number);
+                printf("Fix: Use a format specifier like \"%%d\", \"%%f\", etc., when passing variables.\n");
+            }
+        } else {
+            printf("Error: Missing or incomplete format string in printf at line %d\n", line_number);
+            printf("Fix: Ensure printf contains a valid format string in double quotes.\n");
         }
+
+        // 3. Check for mismatched parentheses
         int openParen = 0, closeParen = 0;
         for (int i = 0; i < strlen(line); i++) {
             if (line[i] == '(') openParen++;
@@ -106,13 +588,18 @@ void check_printf_errors(const char *line, int line_number) {
             printf("Error: Mismatched parentheses in printf at line %d\n", line_number);
             printf("Fix: Ensure correct '(' and ')' usage.\n");
         }
-        if (line[strlen(line) - 2] != ';' && line[strlen(line) - 1] != ';') {
+
+
+        int len = strlen(line);
+        while (len > 0 && (line[len - 1] == ' ' || line[len - 1] == '\n' || line[len - 1] == '\t')) {
+            len--; 
+        }
+        if (len > 0 && line[len - 1] != ';') {
             printf("Warning: Missing semicolon at the end of printf statement at line %d\n", line_number);
             printf("Fix: Add ';' at the end.\n");
         }
     }
 }
-
 
 int main(){
     
@@ -136,6 +623,10 @@ int main(){
         lines[lineCount].lineNumber = lineCount + 1;
         lines[lineCount].lineLength = strlen(buffer);
         strcpy(lines[lineCount].lineContent, buffer);
+        
+    
+        checkForLoopErrors(buffer, lineCount);
+    
 
         // Check for errors
         check_scanf_errors(buffer, lineCount + 1);
@@ -397,9 +888,6 @@ void checkFileFunctions(fileline arr[], int len) {
 
                          */
 
-                        if (errorFlag) {
-                            printf("Error in '%s' statement ---> Line no: %d\n", word, arr[i].lineNumber);
-                        } 
                     }
                 }
 
@@ -571,7 +1059,7 @@ int forcheck(char arr[], int size) {
     
     return errorFlag;
 }
-
+ 
 void keyword(fileline arr[], int len) {
     
     char keywords[32][10] = {
