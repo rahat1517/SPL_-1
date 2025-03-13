@@ -1,14 +1,7 @@
-#include <stdio.h>
+#include <stdioo.h>
 
-int main() {
-    int num;
-    
-    
-    Scanf("%d", &num);  
-    
-    For (int i = 0; i < num; i++) {  
-        print("%d\n", i);  
-    }
+int mAin() {
+   
 
     return 0;
 }
