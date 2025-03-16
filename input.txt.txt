@@ -1,7 +1,7 @@
-#include <stdioo.h>
+#include<stdio.h>
 
 int mAin() {
-   
+   pRINTf("fjhd");
 
     return 0;
 }

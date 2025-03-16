@@ -1,23 +1,28 @@
-#include "regex_check.h"  // Custom header file
+#include <stdio.h>
+#include "lexer.h"
+#include "parser.h"
+#include "symbol_table.h"
+
+// Global Variables
+Scope scopes[MAX_SCOPES];
+int currentScope = 0;
+int scopeCount = 1; // Start with global scope (scope 0)
 
 int main() {
-    const char *test_cases[] = {
-        "#iNclude <stdio.h>",   // ✅ সঠিক
-        "#include <math.h>",    // ✅ সঠিক
-        "#include<stdio.h>",    // ✅ সঠিক
-        "#include<string.h>",   // ✅ সঠিক
-        "#include \"myfile.h\"", // ✅ সঠিক
-        "#include myfile.h"     // ❌ ভুল
-    };
-
-    int num_cases = sizeof(test_cases) / sizeof(test_cases[0]);
-    for (int i = 0; i < num_cases; i++) {
-        if (isInvalidInclude(test_cases[i])) {
-            printf("❌ INVALID: %s\n", test_cases[i]);
-        } else {
-            printf("✔ VALID: %s\n", test_cases[i]);
-        }
+    FILE *input = fopen("input.txt.txt", "r");
+    if (!input) {
+        printf("Error: Could not open file.\n");
+        return 1;
     }
 
+    char line[MAX_LINE_LENGTH];
+    int lineNumber = 1;
+    while (fgets(line, MAX_LINE_LENGTH, input)) {
+        parse(line, lineNumber); // Pass line number to parser
+        lineNumber++;
+    }
+
+    fclose(input);
+    printSymbolTable();
     return 0;
 }
