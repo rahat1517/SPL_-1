@@ -1,0 +1,13 @@
+#include <stdio.h>
+
+int main() {
+    int num;
+    float f;
+    char ch;
+    char str[20];
+
+    
+    printf("Missing argument: "); tyytyrwrry
+
+    return 0;
+}

@@ -1,28 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-
-#define MAX_LINE_LENGTH 1024
-#define NAME_LENGTH 100
-
-// Lexer Tokens
-typedef enum {
-    TOKEN_INT, TOKEN_FLOAT, TOKEN_CHAR, TOKEN_VOID,
-    TOKEN_IF, TOKEN_ELSE, TOKEN_WHILE, TOKEN_FOR, TOKEN_RETURN,
-    TOKEN_INCLUDE, TOKEN_HASH, TOKEN_DEFINE, TOKEN_STRUCT,
-    TOKEN_NUMBER, TOKEN_IDENTIFIER, TOKEN_ASSIGN, TOKEN_SEMICOLON,
-    TOKEN_LPAREN, TOKEN_RPAREN, TOKEN_LBRACE, TOKEN_RBRACE,
-    TOKEN_COMMA, TOKEN_LBRACKET, TOKEN_RBRACKET, TOKEN_PLUS,
-    TOKEN_MINUS, TOKEN_MULT, TOKEN_DIV, TOKEN_LT, TOKEN_GT,
-    TOKEN_EQ, TOKEN_NEQ, TOKEN_AND, TOKEN_OR, TOKEN_STRING,
-    TOKEN_PRINTF, TOKEN_SCANF, TOKEN_UNKNOWN
-} TokenType;
-
-// Lexer Function
-TokenType lexer(char *line, char **token);
+// Function prototypes for lexical analysis
+void removeComments(char *line);
 
 #endif // LEXER_H
