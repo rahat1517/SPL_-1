@@ -2,12 +2,27 @@
 
 int main() {
     int num;
-    float f;
+    float num2;
     char ch;
-    char str[20];
+    int a[5] = {3,3,333};
 
+    //djahdh
     
-    printf("Missing argument: "); tyytyrwrry
+    
+    
+    scanf("%f", &num);  // Should be "%d" for integers
 
+    printf("Enter an integer again: ");
+    scanf("%d", num);  // Missing '&' for the address of the variable
+    
+    printf("Enter a float again: ");
+    scanf("%f", num2);  // Missing '&' for the address of the variable
+    
+    // Incorrect scanf with wrong data types
+    printf("Scanf("%d" &); ");
+    scanf("%d", &ch);  // Incorrect, should be "%s" for string input
+    
+    printf("You entered: %d, %.2f, %c\n", num, num2, ch);
+    
     return 0;
 }

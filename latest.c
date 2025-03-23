@@ -122,6 +122,10 @@
  int getTypeSize(const char *type);
  void reportError(const char *message, int line, int column);
  void printResults();
+ void checkHeaderFileErrors();
+ void checkKeywordCaseSensitivity();
+ void checkStandardFunctionSpelling();
+ void checkIncludeDirectiveFormat();
  
  /**
   * Main function - Entry point of the program
@@ -213,30 +217,63 @@
              continue;
          }
          
-         // Handle preprocessor directives
-         if (*current == '#') {
-             lexemeIndex = 0;
-             lexeme[lexemeIndex++] = *current++;
-             column++;
-             
-             while (*current != '\0' && *current != '\n') {
-                 if (lexemeIndex < MAX_IDENTIFIER_LENGTH - 1) {
-                     lexeme[lexemeIndex++] = *current;
-                 }
-                 current++;
-                 column++;
-             }
-             
-             lexeme[lexemeIndex] = '\0';
-             
-             tokens[tokenCount].type = TOKEN_PREPROCESSOR;
-             strcpy(tokens[tokenCount].lexeme, lexeme);
-             tokens[tokenCount].line = line;
-             tokens[tokenCount].column = column - lexemeIndex;
-             tokenCount++;
-             
-             continue;
-         }
+        // Handle preprocessor directives
+if (*current == '#') {
+    lexemeIndex = 0;
+    lexeme[lexemeIndex++] = *current++;
+    column++;
+    
+    // Skip whitespace after #
+    while (*current != '\0' && isspace(*current) && *current != '\n') {
+        current++;
+        column++;
+    }
+    
+    // Get the directive name
+    while (*current != '\0' && !isspace(*current) && *current != '\n') {
+        if (lexemeIndex < MAX_IDENTIFIER_LENGTH - 1) {
+            lexeme[lexemeIndex++] = *current;
+        }
+        current++;
+        column++;
+    }
+    
+    // Skip whitespace after directive name
+    while (*current != '\0' && isspace(*current) && *current != '\n') {
+        current++;
+        column++;
+    }
+    
+    // Get the rest of the line for include directives
+    if (strncmp(lexeme, "#include", 8) == 0) {
+        while (*current != '\0' && *current != '\n') {
+            if (lexemeIndex < MAX_IDENTIFIER_LENGTH - 1) {
+                lexeme[lexemeIndex++] = *current;
+            }
+            current++;
+            column++;
+        }
+    } else {
+        // For other directives, just get to the end of line
+        while (*current != '\0' && *current != '\n') {
+            if (lexemeIndex < MAX_IDENTIFIER_LENGTH - 1) {
+                lexeme[lexemeIndex++] = *current;
+            }
+            current++;
+            column++;
+        }
+    }
+    
+    lexeme[lexemeIndex] = '\0';
+    
+    tokens[tokenCount].type = TOKEN_PREPROCESSOR;
+    strcpy(tokens[tokenCount].lexeme, lexeme);
+    tokens[tokenCount].line = line;
+    tokens[tokenCount].column = column - lexemeIndex;
+    tokenCount++;
+    
+    continue;
+}
          
          // Handle string literals
          if (*current == '"') {
@@ -451,6 +488,10 @@
      identifyKeywords();
      checkPrintfErrors();
      checkScanfErrors();
+     checkHeaderFileErrors();
+     checkKeywordCaseSensitivity();
+     checkStandardFunctionSpelling();
+     checkIncludeDirectiveFormat();
  }
  
  /**
@@ -637,6 +678,244 @@
          }
      }
  }
+
+ /**
+ * Checks for errors in header file names
+ */
+void checkHeaderFileErrors() {
+    printf("Checking for header file errors...\n");
+    
+    const char *stdHeaders[] = {
+        "stdio.h", "stdlib.h", "string.h", "ctype.h", "math.h", 
+        "time.h", "stdbool.h", "stddef.h", "stdint.h", "float.h",
+        "limits.h", "assert.h", "locale.h", "setjmp.h", "signal.h"
+    };
+    int stdHeaderCount = sizeof(stdHeaders) / sizeof(stdHeaders[0]);
+    
+    for (int i = 0; i < tokenCount; i++) {
+        if (tokens[i].type == TOKEN_PREPROCESSOR) {
+            // Check for #include directives
+            if (strstr(tokens[i].lexeme, "#include") != NULL) {
+                // Extract the header name
+                char *start = strstr(tokens[i].lexeme, "<");
+                char *end = NULL;
+                bool hasAngleBrackets = false;
+                
+                if (start != NULL) {
+                    start++;
+                    end = strstr(start, ">");
+                    hasAngleBrackets = true;
+                } else {
+                    start = strstr(tokens[i].lexeme, "\"");
+                    if (start != NULL) {
+                        start++;
+                        end = strstr(start, "\"");
+                    }
+                }
+                
+                if (start != NULL && end != NULL) {
+                    int headerLen = end - start;
+                    char headerName[MAX_IDENTIFIER_LENGTH];
+                    strncpy(headerName, start, headerLen);
+                    headerName[headerLen] = '\0';
+                    
+                    // Check for common misspellings
+                    if (strcmp(headerName, "stdio") == 0) {
+                        reportError("Missing '.h' extension in header file name", tokens[i].line, tokens[i].column);
+                    } else if (strcmp(headerName, "stDio.h") == 0 || strcmp(headerName, "STDIO.H") == 0 || strcmp(headerName, "StDio.h") == 0 || strcmp(headerName, "StDiO.h") == 0 || strcmp(headerName, "stDio.h") == 0 || strcmp(headerName, "STDiO.h") == 0 || strcmp(headerName, "StdIO.h") == 0 || strcmp(headerName, "stdIO.h") == 0 ||
+                    strcmp(headerName, "stdIo.h") == 0 || strcmp(headerName, "STDIO.H") == 0 || strcmp(headerName, "Stdio.H") == 0 || strcmp(headerName, "StDiO.H") == 0 || strcmp(headerName, "STDIo.h") == 0 || strcmp(headerName, "stdiO.h") == 0 || strcmp(headerName, "StDIO.h") == 0 || strcmp(headerName, "StdIo.h") == 0 ||
+                    strcmp(headerName, "StdIO.H") == 0 || strcmp(headerName, "stdIo.H") == 0 || strcmp(headerName, "sTDIO.H") == 0 || strcmp(headerName, "stDIO.h") == 0 || strcmp(headerName, "stDio.H") == 0 || strcmp(headerName, "stDIO.h") == 0 || strcmp(headerName, "StDIO.h") == 0 || strcmp(headerName, "stdIo.H") == 0 ||
+                    strcmp(headerName, "StDiO.h") == 0 || strcmp(headerName, "stDiO.h") == 0 || strcmp(headerName, "stDio.H") == 0 || strcmp(headerName, "STDIO.h") == 0 || strcmp(headerName, "StdIo.H") == 0 || strcmp(headerName, "StDIO.h") == 0 || strcmp(headerName, "STDiO.H") == 0 || strcmp(headerName, "StDiO.h") == 0 ||
+                    strcmp(headerName, "StdIO.h") == 0 || strcmp(headerName, "stdIo.H") == 0 || strcmp(headerName, "StDIO.H") == 0 || strcmp(headerName, "stdiO.H") == 0 || strcmp(headerName, "STDIO.h") == 0 || strcmp(headerName, "stDIO.h") == 0 || strcmp(headerName, "StDIO.H") == 0 || strcmp(headerName, "stdiO.h") == 0 ||
+                    strcmp(headerName, "stDIo.H") == 0 || strcmp(headerName, "stDIO.h") == 0 || strcmp(headerName, "StdiO.H") == 0 || strcmp(headerName, "STDiO.H") == 0 || strcmp(headerName, "Stdio.H") == 0 || strcmp(headerName, "stDIo.h") == 0 || strcmp(headerName, "stDio.H") == 0 || strcmp(headerName, "stDIo.h") == 0 ||
+                    strcmp(headerName, "sTDiO.h") == 0 || strcmp(headerName, "StDIo.h") == 0 || strcmp(headerName, "StDiO.h") == 0 || strcmp(headerName, "stdIo.H") == 0 || strcmp(headerName, "StDIO.h") == 0 || strcmp(headerName, "stDiO.h") == 0 || strcmp(headerName, "StDiO.H") == 0 || strcmp(headerName, "STDiO.h") == 0 ||
+                    strcmp(headerName, "stDIo.h") == 0 || strcmp(headerName, "StDIO.h") == 0 || strcmp(headerName, "stdiO.H") == 0 || strcmp(headerName, "stDIO.H") == 0 || strcmp(headerName, "stdiO.h") == 0 || strcmp(headerName, "stdiO.h") == 0 || strcmp(headerName, "STDIo.H") == 0 || strcmp(headerName, "StDIO.H") == 0 ||
+                    strcmp(headerName, "Stdio.H") == 0 || strcmp(headerName, "STDIo.h") == 0 || strcmp(headerName, "STDiO.h") == 0 || strcmp(headerName, "stdio.H") == 0 || strcmp(headerName, "stDIo.h") == 0 || strcmp(headerName, "stdiO.h") == 0 || strcmp(headerName, "stDiO.h") == 0 || strcmp(headerName, "stDiO.h") == 0) {
+                        reportError("Case sensitivity error in header file name (should be 'stdio.h')", tokens[i].line, tokens[i].column);
+                    } else if (strcmp(headerName, "stido.h") == 0 || strcmp(headerName, "sdtio.h") == 0 || strcmp(headerName, "stidoh.h") == 0 ||
+                    strcmp(headerName, "sdto.h") == 0 || strcmp(headerName, "sdti.o") == 0 || strcmp(headerName, "stddo.h") == 0 ||
+                    strcmp(headerName, "stdioh.h") == 0 || strcmp(headerName, "stdo.h") == 0 || strcmp(headerName, "stdo.h") == 0 ||
+                    strcmp(headerName, "stdi.h") == 0 || strcmp(headerName, "sdtio.h") == 0 || strcmp(headerName, "sdtioh.h") == 0 ||
+                    strcmp(headerName, "stdoi.h") == 0 || strcmp(headerName, "stdioh.h") == 0 || strcmp(headerName, "stdih.o") == 0 || strcmp(headerName, "stdoi.h") == 0) {
+                        reportError("Possible misspelling in header file name (should be 'stdio.h')", tokens[i].line, tokens[i].column);
+                    } 
+                    
+                    // Check if it's a standard header but used with quotes instead of angle brackets
+                    bool isStdHeader = false;
+                    for (int j = 0; j < stdHeaderCount; j++) {
+                        if (strcmp(headerName, stdHeaders[j]) == 0) {
+                            isStdHeader = true;
+                            break;
+                        }
+                    }
+                    
+                    if (isStdHeader && !hasAngleBrackets) {
+                        reportError("Standard library header should use angle brackets '<>' instead of quotes", tokens[i].line, tokens[i].column);
+                    }
+                    
+                    // Check for close misspellings of standard headers
+                    if (!isStdHeader) {
+                        for (int j = 0; j < stdHeaderCount; j++) {
+                            // Simple check for headers that are off by 1-2 characters
+                            if (strlen(headerName) > 3 && strlen(stdHeaders[j]) > 3) {
+                                int matches = 0;
+                                int minLength = strlen(headerName) < strlen(stdHeaders[j]) ? 
+                                               strlen(headerName) : strlen(stdHeaders[j]);
+                                
+                                for (int k = 0; k < minLength; k++) {
+                                    if (headerName[k] == stdHeaders[j][k]) {
+                                        matches++;
+                                    }
+                                }
+                                
+                                // If names are similar but not identical
+                                if (matches > minLength * 0.7 && matches < minLength) {
+                                    char message[MAX_ERROR_MSG_LENGTH];
+                                    sprintf(message, "Possible misspelling in header name: '%s', did you mean '%s'?", 
+                                            headerName, stdHeaders[j]);
+                                    reportError(message, tokens[i].line, tokens[i].column);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    reportError("Malformed #include directive", tokens[i].line, tokens[i].column);
+                }
+                
+                // Check for missing space after #include
+                if (strstr(tokens[i].lexeme, "#include<stdo.h>") != NULL || strstr(tokens[i].lexeme, "#include\"") != NULL) {
+                    reportError("Missing space after '#include'", tokens[i].line, tokens[i].column);
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Checks for case sensitivity errors in keywords
+ */
+void checkKeywordCaseSensitivity() {
+    printf("Checking for keyword case sensitivity errors...\n");
+    
+    for (int i = 0; i < tokenCount; i++) {
+        if (tokens[i].type == TOKEN_IDENTIFIER) {
+            // Check if identifier is a keyword but with wrong case
+            for (int j = 0; j < MAX_KEYWORDS; j++) {
+                if (strcasecmp(tokens[i].lexeme, keywords[j]) == 0 && 
+                    strcmp(tokens[i].lexeme, keywords[j]) != 0) {
+                    char message[MAX_ERROR_MSG_LENGTH];
+                    sprintf(message, "Case sensitivity error: '%s' should be '%s'", 
+                            tokens[i].lexeme, keywords[j]);
+                    reportError(message, tokens[i].line, tokens[i].column);
+                    break;
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Checks for spelling errors in standard library function calls
+ */
+void checkStandardFunctionSpelling() {
+    printf("Checking for standard function spelling errors...\n");
+    
+    for (int i = 0; i < tokenCount - 1; i++) {
+        if (tokens[i].type == TOKEN_IDENTIFIER && 
+            i+1 < tokenCount && strcmp(tokens[i+1].lexeme, "(") == 0) {
+            
+            const char *funcName = tokens[i].lexeme;
+            
+            // Check if this is close to a standard library function but not exact
+            if (!isStdLibFunction(funcName)) {
+                for (int j = 0; j < sizeof(stdLibFunctions) / sizeof(stdLibFunctions[0]); j++) {
+                    // Calculate similarity
+                    int matches = 0;
+                    int minLength = strlen(funcName) < strlen(stdLibFunctions[j]) ? 
+                                   strlen(funcName) : strlen(stdLibFunctions[j]);
+                    
+                    for (int k = 0; k < minLength; k++) {
+                        if (funcName[k] == stdLibFunctions[j][k]) {
+                            matches++;
+                        }
+                    }
+                    
+                    // If names are similar but not identical
+                    if (matches > minLength * 0.7 && matches < minLength) {
+                        char message[MAX_ERROR_MSG_LENGTH];
+                        sprintf(message, "Possible misspelling of standard function: '%s', did you mean '%s'?", 
+                                funcName, stdLibFunctions[j]);
+                        reportError(message, tokens[i].line, tokens[i].column);
+                        break;
+                    }
+                    
+                    // Check for case sensitivity
+                    if (strcasecmp(funcName, stdLibFunctions[j]) == 0 && 
+                        strcmp(funcName, stdLibFunctions[j]) != 0) {
+                        char message[MAX_ERROR_MSG_LENGTH];
+                        sprintf(message, "Case sensitivity error in function call: '%s' should be '%s'", 
+                                funcName, stdLibFunctions[j]);
+                        reportError(message, tokens[i].line, tokens[i].column);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Checks for proper format of include directives
+ */
+void checkIncludeDirectiveFormat() {
+    printf("Checking for include directive format errors...\n");
+    
+    for (int i = 0; i < tokenCount; i++) {
+        if (tokens[i].type == TOKEN_PREPROCESSOR) {
+            const char *lexeme = tokens[i].lexeme;
+            
+            // Check for malformed #include directives
+            if (strncmp(lexeme, "#include", 8) == 0) {
+                // Check if there's anything after #include
+                if (strlen(lexeme) <= 8) {
+                    reportError("Incomplete #include directive", tokens[i].line, tokens[i].column);
+                    continue;
+                }
+                
+                // Check for correct opening and closing brackets/quotes
+                bool hasOpeningBracket = strstr(lexeme, "<") != NULL;
+                bool hasClosingBracket = strstr(lexeme, ">") != NULL;
+                bool hasOpeningQuote = strstr(lexeme, "\"") != NULL;
+                bool hasClosingQuote = (strstr(lexeme, "\"") != strrchr(lexeme, '\"'));
+                
+                if (hasOpeningBracket && !hasClosingBracket) {
+                    reportError("Missing closing '>' in #include directive", tokens[i].line, tokens[i].column);
+                } else if (!hasOpeningBracket && hasClosingBracket) {
+                    reportError("Missing opening '<' in #include directive", tokens[i].line, tokens[i].column);
+                } else if (hasOpeningQuote && !hasClosingQuote) {
+                    reportError("Missing closing '\"' in #include directive", tokens[i].line, tokens[i].column);
+                } else if (!hasOpeningQuote && !hasOpeningBracket) {
+                    reportError("Missing file name in #include directive", tokens[i].line, tokens[i].column);
+                } else if (hasOpeningBracket && hasOpeningQuote) {
+                    reportError("Cannot use both angle brackets and quotes in #include directive", tokens[i].line, tokens[i].column);
+                }
+                
+                // Check for extra characters after the closing bracket/quote
+                const char *end = NULL;
+                if (hasClosingBracket) {
+                    end = strrchr(lexeme, '>');
+                } else if (hasClosingQuote) {
+                    end = strrchr(lexeme, '\"');
+                }
+                
+                if (end != NULL && *(end + 1) != '\0' && !isspace(*(end + 1))) {
+                    reportError("Extra characters after header name in #include directive", tokens[i].line, tokens[i].column);
+                }
+            }
+        }
+    }
+}
  
  /**
   * Identifies functions (both user-defined and standard library)
@@ -885,8 +1164,9 @@
 /**
  * Calculates memory usage by variables
  */
+int totalMemory = 0;
 void calculateMemoryUsage() {
-    int totalMemory = 0;
+    
     int typeMemory[5] = {0}; // For int, char, float, double, other
     
     printf("Calculating memory usage...\n");
@@ -1453,33 +1733,67 @@ void printResults() {
                    i + 1, errors[i].line, errors[i].column, errors[i].message);
         }
         printf("---------------------------\n\n");
+    }// Improved error categorization for include statements
+    int headerErrors = 0, bracketErrors = 0, semicolonErrors = 0, quoteErrors = 0, variableErrors = 0, otherErrors = 0;
+
+for (int i = 0; i < errorCount; i++) {
+    // Comprehensive check for header/include errors
+    if (strstr(errors[i].message, "header") != NULL || 
+        strstr(errors[i].message, "#include<stdio.h>") != NULL ||
+        strstr(errors[i].message, "stdio") != NULL ||
+        strstr(errors[i].message, "include") != NULL ||
+        strstr(errors[i].message, "No such file") != NULL ||
+        strstr(errors[i].message, "cannot find") != NULL ||
+        strstr(errors[i].message, "Missing space") != NULL ||
+        strstr(errors[i].message, "space after") != NULL ||
+        strstr(errors[i].message, "expected") != NULL ||
+        strstr(errors[i].message, "not found") != NULL ||
+        strstr(errors[i].message, "file path") != NULL ||
+        strstr(errors[i].message, "directory") != NULL ||
+        strstr(errors[i].message, "path") != NULL ||
+        (strstr(errors[i].message, "case") != NULL && strstr(errors[i].message, "include") != NULL)) {
+        headerErrors++;
+    } else if (strstr(errors[i].message, "bracket") != NULL || 
+               strstr(errors[i].message, "parenthesis") != NULL ||
+               strstr(errors[i].message, "brace") != NULL || 
+               strstr(errors[i].message, "delimiter") != NULL) {
+        bracketErrors++;
+    } else if (strstr(errors[i].message, "semicolon") != NULL) {
+        semicolonErrors++;
+    } else if (strstr(errors[i].message, "quote") != NULL || 
+               strstr(errors[i].message, "string") != NULL ||
+               strstr(errors[i].message, "character") != NULL) {
+        quoteErrors++;
+    } else if (strstr(errors[i].message, "variable") != NULL) {
+        variableErrors++;
+    } else {
+        otherErrors++;
     }
-    
-    // Print function statistics
-    int userDefinedCount = 0;
-    int userDefinedPrototypes = 0;
-    int stdLibCount = 0;
-    
-    for (int i = 0; i < functionCount; i++) {
-        if (functions[i].isUserDefined) {
-            if (functions[i].isPrototype) {
-                userDefinedPrototypes++;
-            } else {
-                userDefinedCount++;
-            }
+}
+// Print function statistics
+int userDefinedCount = 0;
+int userDefinedPrototypes = 0;
+int stdLibCount = 0;
+
+for (int i = 0; i < functionCount; i++) {
+    if (functions[i].isUserDefined) {
+        if (functions[i].isPrototype) {
+            userDefinedPrototypes++;
         } else {
-            stdLibCount++;
+            userDefinedCount++;
         }
+    } else {
+        stdLibCount++;
     }
-    
-    printf("FUNCTION ANALYSIS:\n");
-    printf("---------------------------\n");
-    printf("Total functions found: %d\n", functionCount);
-    printf("User-defined functions: %d\n", userDefinedCount);
-    printf("User-defined prototypes: %d\n", userDefinedPrototypes);
-    printf("Standard library functions: %d\n", stdLibCount);
-    printf("---------------------------\n\n");
-    
+}
+
+printf("FUNCTION ANALYSIS:\n");
+printf("---------------------------\n");
+printf("Total functions found: %d\n", functionCount);
+printf("User-defined functions: %d\n", userDefinedCount);
+printf("User-defined prototypes: %d\n", userDefinedPrototypes);
+printf("Standard library functions: %d\n", stdLibCount);
+printf("---------------------------\n\n");
     // Print function details
     printf("FUNCTION DETAILS:\n");
     printf("---------------------------\n");
@@ -1579,7 +1893,7 @@ void printResults() {
     // Summary statistics
     printf("CODE SUMMARY:\n");
     printf("---------------------------\n");
-    printf("Memory usage: %d bytes\n", 0); // Calculated in calculateMemoryUsage
+    printf("Memory usage: %d bytes\n", totalMemory ); // Calculated in calculateMemoryUsage
     printf("Error density: %.2f errors per 100 tokens\n", 
            (float)errorCount / (tokenCount - 1) * 100);
     printf("Function to variable ratio: %.2f\n", 
