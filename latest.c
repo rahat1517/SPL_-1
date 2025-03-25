@@ -1,18 +1,3 @@
-/**
- * C Syntax Checker - A Lightweight Tool for Error Detection in C Programs
- * 
- * This program analyzes C source code to detect common syntax errors and
- * provides detailed statistics about the code structure.
- * 
- * Features:
- * - Detects unbalanced braces, parentheses, and brackets
- * - Identifies missing semicolons
- * - Finds unmatched quotes
- * - Flags undefined variables
- * - Counts functions (both user-defined and standard library)
- * - Calculates memory usage by variables
- * - Identifies C language keywords and standard library functions
- */
 
  #include <stdio.h>
  #include <stdlib.h>
@@ -69,6 +54,8 @@
      bool isUserDefined;
      bool isPrototype;
      int line;
+     char returnType[MAX_IDENTIFIER_LENGTH];
+     
  } Function;
  
  /* Error information structure */
@@ -126,7 +113,8 @@
  void checkKeywordCaseSensitivity();
  void checkStandardFunctionSpelling();
  void checkIncludeDirectiveFormat();
- 
+ void checkIncludePlacement(); 
+ void validateMainFunction();
  /**
   * Main function - Entry point of the program
   */
@@ -475,6 +463,8 @@ if (*current == '#') {
      printf("Tokenization complete. Found %d tokens.\n", tokenCount);
  }
  
+ 
+ 
  /**
   * Runs all analysis passes on the code
   */
@@ -489,11 +479,32 @@ if (*current == '#') {
      checkPrintfErrors();
      checkScanfErrors();
      checkHeaderFileErrors();
+     checkIncludePlacement();
      checkKeywordCaseSensitivity();
      checkStandardFunctionSpelling();
      checkIncludeDirectiveFormat();
+     validateMainFunction();
  }
  
+ void validateMainFunction() {
+    printf("Validating the 'main' function...\n");
+
+    bool mainFound = false;
+
+    for (int i = 0; i < functionCount; i++) {
+        // Check if the function name is "main"
+        if (strcmp(functions[i].name, "main") == 0) {
+            mainFound = true;
+        } else if (strcasecmp(functions[i].name, "main") == 0) {
+            // Case-insensitive match but incorrect case
+            reportError("Case sensitivity error: 'main' function must be lowercase", functions[i].line, 0);
+        }
+    }
+
+    if (!mainFound) {
+        reportError("No 'main' function found in the program", 0, 0);
+    }
+}
  /**
   * Checks for balanced delimiters (parentheses, braces, brackets)
   */
@@ -567,84 +578,107 @@ if (*current == '#') {
      }
  }
  
- /**
-  * Checks for missing semicolons
-  */
- void checkMissingSemicolons() {
-     printf("Checking for missing semicolons...\n");
-     
-     for (int i = 0; i < tokenCount - 1; i++) {
-         // Skip preprocessor directives and their contents
-         if (tokens[i].type == TOKEN_PREPROCESSOR) {
-             while (i < tokenCount - 1 && tokens[i].line == tokens[i+1].line) {
-                 i++;
-             }
-             continue;
-         }
-         
-         // Skip function declarations/definitions (they don't need semicolons)
-         if (i + 2 < tokenCount && 
-             tokens[i].type == TOKEN_IDENTIFIER && 
-             strcmp(tokens[i+1].lexeme, "(") == 0) {
-             // Find the matching closing parenthesis
-             int j = i + 2;
-             int parenCount = 1;
+ /* Checks for missing semicolons and incorrect use of commas
+ */
+void checkMissingSemicolons() {
+    printf("Checking for missing semicolons...\n");
+
+    for (int i = 0; i < tokenCount - 1; i++) {
+        // Skip preprocessor directives and their contents
+        if (tokens[i].type == TOKEN_PREPROCESSOR) {
+            while (i < tokenCount - 1 && tokens[i].line == tokens[i + 1].line) {
+                i++;
+            }
+            continue;
+        }
+
+        // Skip function declarations/definitions (they don't need semicolons)
+        if (i + 2 < tokenCount &&
+            tokens[i].type == TOKEN_IDENTIFIER &&
+            strcmp(tokens[i + 1].lexeme, "(") == 0) {
+            // Find the matching closing parenthesis
+            int j = i + 2;
+            int parenCount = 1;
+
+            while (j < tokenCount && parenCount > 0) {
+                if (strcmp(tokens[j].lexeme, "(") == 0) parenCount++;
+                if (strcmp(tokens[j].lexeme, ")") == 0) parenCount--;
+                j++;
+            }
+
+            // Check if this is followed by a block (function definition) or semicolon (prototype)
+            if (j < tokenCount && strcmp(tokens[j].lexeme, "{") == 0) {
+                // This is a function definition, skip to the end of the function
+                int braceCount = 1;
+                j++;
+
+                while (j < tokenCount && braceCount > 0) {
+                    if (strcmp(tokens[j].lexeme, "{") == 0) braceCount++;
+                    if (strcmp(tokens[j].lexeme, "}") == 0) braceCount--;
+                    j++;
+                }
+
+                i = j - 1;
+                continue;
+            }
+        }
+
+        // Check for missing semicolon in variable declarations and function calls
+        if (tokens[i].type == TOKEN_KEYWORD && 
+            (strcmp(tokens[i].lexeme, "float") == 0 || 
+             strcmp(tokens[i].lexeme, "char") == 0 || 
              
-             while (j < tokenCount && parenCount > 0) {
-                 if (strcmp(tokens[j].lexeme, "(") == 0) parenCount++;
-                 if (strcmp(tokens[j].lexeme, ")") == 0) parenCount--;
-                 j++;
-             }
-             
-             // Check if this is followed by a block (function definition) or semicolon (prototype)
-             if (j < tokenCount && strcmp(tokens[j].lexeme, "{") == 0) {
-                 // This is a function definition, skip to the end of the function
-                 int braceCount = 1;
-                 j++;
-                 
-                 while (j < tokenCount && braceCount > 0) {
-                     if (strcmp(tokens[j].lexeme, "{") == 0) braceCount++;
-                     if (strcmp(tokens[j].lexeme, "}") == 0) braceCount--;
-                     j++;
-                 }
-                 
-                 i = j - 1;
-                 continue;
-             }
-         }
-         
-         // Check for statements that should end with semicolons
-         if ((tokens[i].type == TOKEN_IDENTIFIER || 
-              tokens[i].type == TOKEN_NUMBER || 
-              strcmp(tokens[i].lexeme, ")") == 0 || 
-              strcmp(tokens[i].lexeme, "]") == 0 || 
-              strcmp(tokens[i].lexeme, "++") == 0 || 
-              strcmp(tokens[i].lexeme, "--") == 0 || 
-              tokens[i].type == TOKEN_STRING || 
-              tokens[i].type == TOKEN_CHAR) && 
-             tokens[i+1].line > tokens[i].line && 
-             strcmp(tokens[i].lexeme, ";") != 0 && 
-             strcmp(tokens[i].lexeme, "{") != 0 && 
-             strcmp(tokens[i].lexeme, "}") != 0) {
-             
-             // Check if the previous line ended with a semicolon
-             bool hasEndingSemicolon = false;
-             int j = i;
-             while (j >= 0 && tokens[j].line == tokens[i].line) {
-                 if (strcmp(tokens[j].lexeme, ";") == 0) {
-                     hasEndingSemicolon = true;
-                     break;
-                 }
-                 j--;
-             }
-             
-             if (!hasEndingSemicolon) {
-                 reportError("Missing semicolon at end of statement", tokens[i].line, tokens[i].column + strlen(tokens[i].lexeme));
-             }
-         }
-     }
- }
- 
+             strcmp(tokens[i].lexeme, "double") == 0)) {
+            
+            // Check if the next token is an identifier
+            if (i + 1 < tokenCount && tokens[i + 1].type == TOKEN_IDENTIFIER) {
+                // Check if the declaration ends with a semicolon
+                if (i + 2 >= tokenCount || strcmp(tokens[i + 2].lexeme, ";") != 0) {
+                    reportError("Missing semicolon after variable declaration", tokens[i + 1].line, tokens[i + 1].column + strlen(tokens[i + 1].lexeme));
+                }
+            }
+        }
+
+        // Check for statements that should end with semicolons
+        if ((tokens[i].type == TOKEN_IDENTIFIER ||
+             tokens[i].type == TOKEN_NUMBER ||
+             strcmp(tokens[i].lexeme, ")") == 0 ||
+             strcmp(tokens[i].lexeme, "]") == 0 ||
+             strcmp(tokens[i].lexeme, "++") == 0 ||
+             strcmp(tokens[i].lexeme, "--") == 0 ||
+             tokens[i].type == TOKEN_STRING ||
+             tokens[i].type == TOKEN_CHAR) &&
+            tokens[i + 1].line > tokens[i].line &&
+            strcmp(tokens[i].lexeme, ";") != 0 &&
+            strcmp(tokens[i].lexeme, "{") != 0 &&
+            strcmp(tokens[i].lexeme, "}") != 0) {
+            
+            // Check if the previous line ended with a semicolon
+            bool hasEndingSemicolon = false;
+            int j = i;
+            while (j >= 0 && tokens[j].line == tokens[i].line) {
+                if (strcmp(tokens[j].lexeme, ";") == 0) {
+                    hasEndingSemicolon = true;
+                    break;
+                }
+                j--;
+            }
+
+            if (!hasEndingSemicolon) {
+                reportError("Missing semicolon at end of statement", tokens[i].line, tokens[i].column + strlen(tokens[i].lexeme));
+            }
+        }
+
+        // Check for incorrect use of a comma instead of a semicolon
+        if (tokens[i].type == TOKEN_SEPARATOR && strcmp(tokens[i].lexeme, ",") == 0) {
+            // Check if the comma is used where a semicolon is expected
+            if (tokens[i + 1].line > tokens[i].line) {
+                reportError("Comma used instead of semicolon", tokens[i].line, tokens[i].column);
+            }
+        }
+    }
+}
+
  /**
   * Checks for unmatched quotes in string and character literals
   */
@@ -722,9 +756,9 @@ void checkHeaderFileErrors() {
                     // Check for common misspellings
                     if (strcmp(headerName, "stdio") == 0) {
                         reportError("Missing '.h' extension in header file name", tokens[i].line, tokens[i].column);
-                    } else if (strcmp(headerName, "stDio.h") == 0 || strcmp(headerName, "STDIO.H") == 0 || strcmp(headerName, "StDio.h") == 0 || strcmp(headerName, "StDiO.h") == 0 || strcmp(headerName, "stDio.h") == 0 || strcmp(headerName, "STDiO.h") == 0 || strcmp(headerName, "StdIO.h") == 0 || strcmp(headerName, "stdIO.h") == 0 ||
-                    strcmp(headerName, "stdIo.h") == 0 || strcmp(headerName, "STDIO.H") == 0 || strcmp(headerName, "Stdio.H") == 0 || strcmp(headerName, "StDiO.H") == 0 || strcmp(headerName, "STDIo.h") == 0 || strcmp(headerName, "stdiO.h") == 0 || strcmp(headerName, "StDIO.h") == 0 || strcmp(headerName, "StdIo.h") == 0 ||
-                    strcmp(headerName, "StdIO.H") == 0 || strcmp(headerName, "stdIo.H") == 0 || strcmp(headerName, "sTDIO.H") == 0 || strcmp(headerName, "stDIO.h") == 0 || strcmp(headerName, "stDio.H") == 0 || strcmp(headerName, "stDIO.h") == 0 || strcmp(headerName, "StDIO.h") == 0 || strcmp(headerName, "stdIo.H") == 0 ||
+                    } else if (strcmp(headerName, "stDio.h") == 0 || strcmp(headerName, "STDIO.H") == 0 || strcmp(headerName, "StDio.h") == 0 || strcmp(headerName, "StDiO.h") == 0 || strcmp(headerName, "stDio.h") == 0 || strcmp(headerName, "STDiO.h") == 0 || strcmp(headerName, "StdIO.h") == 0 || strcmp(headerName, "stdIO.h") == 0 || strcmp(headerName, "stdo.h") == 0 || strcmp(headerName, "stdi.h") == 0 ||
+                    strcmp(headerName, "stdIo.h") == 0 || strcmp(headerName, "STDIO.H") == 0 || strcmp(headerName, "Stdio.H") == 0 || strcmp(headerName, "StDiO.H") == 0 || strcmp(headerName, "STDIo.h") == 0 || strcmp(headerName, "stdiO.h") == 0 || strcmp(headerName, "StDIO.h") == 0 || strcmp(headerName, "StdIo.h") == 0 || strcmp(headerName, "tdio.h") == 0 || strcmp(headerName, "stio.h") == 0 ||
+                    strcmp(headerName, "StdIO.H") == 0 || strcmp(headerName, "stdIo.H") == 0 || strcmp(headerName, "sTDIO.H") == 0 || strcmp(headerName, "stDIO.h") == 0 || strcmp(headerName, "stDio.H") == 0 || strcmp(headerName, "stDIO.h") == 0 || strcmp(headerName, "StDIO.h") == 0 || strcmp(headerName, "stdIo.H") == 0 || strcmp(headerName, "stdO.H") == 0 || strcmp(headerName, "sdio.h") == 0 ||
                     strcmp(headerName, "StDiO.h") == 0 || strcmp(headerName, "stDiO.h") == 0 || strcmp(headerName, "stDio.H") == 0 || strcmp(headerName, "STDIO.h") == 0 || strcmp(headerName, "StdIo.H") == 0 || strcmp(headerName, "StDIO.h") == 0 || strcmp(headerName, "STDiO.H") == 0 || strcmp(headerName, "StDiO.h") == 0 ||
                     strcmp(headerName, "StdIO.h") == 0 || strcmp(headerName, "stdIo.H") == 0 || strcmp(headerName, "StDIO.H") == 0 || strcmp(headerName, "stdiO.H") == 0 || strcmp(headerName, "STDIO.h") == 0 || strcmp(headerName, "stDIO.h") == 0 || strcmp(headerName, "StDIO.H") == 0 || strcmp(headerName, "stdiO.h") == 0 ||
                     strcmp(headerName, "stDIo.H") == 0 || strcmp(headerName, "stDIO.h") == 0 || strcmp(headerName, "StdiO.H") == 0 || strcmp(headerName, "STDiO.H") == 0 || strcmp(headerName, "Stdio.H") == 0 || strcmp(headerName, "stDIo.h") == 0 || strcmp(headerName, "stDio.H") == 0 || strcmp(headerName, "stDIo.h") == 0 ||
@@ -735,7 +769,7 @@ void checkHeaderFileErrors() {
                     } else if (strcmp(headerName, "stido.h") == 0 || strcmp(headerName, "sdtio.h") == 0 || strcmp(headerName, "stidoh.h") == 0 ||
                     strcmp(headerName, "sdto.h") == 0 || strcmp(headerName, "sdti.o") == 0 || strcmp(headerName, "stddo.h") == 0 ||
                     strcmp(headerName, "stdioh.h") == 0 || strcmp(headerName, "stdo.h") == 0 || strcmp(headerName, "stdo.h") == 0 ||
-                    strcmp(headerName, "stdi.h") == 0 || strcmp(headerName, "sdtio.h") == 0 || strcmp(headerName, "sdtioh.h") == 0 ||
+                    strcmp(headerName, "stdi.h") == 0 || strcmp(headerName, "sdtio.h") == 0 || strcmp(headerName, "sdtioh.h") == 0 || 
                     strcmp(headerName, "stdoi.h") == 0 || strcmp(headerName, "stdioh.h") == 0 || strcmp(headerName, "stdih.o") == 0 || strcmp(headerName, "stdoi.h") == 0) {
                         reportError("Possible misspelling in header file name (should be 'stdio.h')", tokens[i].line, tokens[i].column);
                     } 
@@ -868,55 +902,113 @@ void checkStandardFunctionSpelling() {
 /**
  * Checks for proper format of include directives
  */
+void checkIncludePlacement() {
+    printf("Checking for invalid placement of #include directives...\n");
+
+    bool insideFunction = false;
+
+    for (int i = 0; i < tokenCount; i++) {
+        if (tokens[i].type == TOKEN_IDENTIFIER && strcmp(tokens[i].lexeme, "main") == 0) {
+            // Assume we are inside a function after encountering "main"
+            insideFunction = true;
+        }
+
+        if (tokens[i].type == TOKEN_PREPROCESSOR && strstr(tokens[i].lexeme, "#include") != NULL) {
+            if (insideFunction) {
+                reportError("Invalid placement of #include directive. It must be outside of functions.", tokens[i].line, tokens[i].column);
+            }
+        }
+    }
+}
 void checkIncludeDirectiveFormat() {
     printf("Checking for include directive format errors...\n");
-    
+
     for (int i = 0; i < tokenCount; i++) {
         if (tokens[i].type == TOKEN_PREPROCESSOR) {
             const char *lexeme = tokens[i].lexeme;
-            
-            // Check for malformed #include directives
-            if (strncmp(lexeme, "#include", 8) == 0) {
-                // Check if there's anything after #include
-                if (strlen(lexeme) <= 8) {
-                    reportError("Incomplete #include directive", tokens[i].line, tokens[i].column);
-                    continue;
+
+            // Check if the directive starts with '#'
+            if (lexeme[0] == '#') {
+                // Check if the lexeme starts with '#include' or something similar
+                if (strncmp(lexeme, "#include", 8) == 0) {
+                    // Check if there's anything after #include
+                    if (strlen(lexeme) <= 8) {
+                        reportError("Incomplete #include directive", tokens[i].line, tokens[i].column);
+                        continue;
+                    }
+
+                    // Check for correct opening and closing brackets/quotes
+                    bool hasOpeningBracket = strstr(lexeme, "<") != NULL;
+                    bool hasClosingBracket = strstr(lexeme, ">") != NULL;
+                    bool hasOpeningQuote = strstr(lexeme, "\"") != NULL;
+                    bool hasClosingQuote = (strstr(lexeme, "\"") != strrchr(lexeme, '\"'));
+
+                    if (hasOpeningBracket && !hasClosingBracket) {
+                        reportError("Missing closing '>' in #include directive", tokens[i].line, tokens[i].column);
+                    } else if (!hasOpeningBracket && hasClosingBracket) {
+                        reportError("Missing opening '<' in #include directive", tokens[i].line, tokens[i].column);
+                    } else if (hasOpeningQuote && !hasClosingQuote) {
+                        reportError("Missing closing '\"' in #include directive", tokens[i].line, tokens[i].column);
+                    } else if (!hasOpeningQuote && !hasOpeningBracket) {
+                        reportError("Missing file name in #include directive", tokens[i].line, tokens[i].column);
+                    } else if (hasOpeningBracket && hasOpeningQuote) {
+                        reportError("Cannot use both angle brackets and quotes in #include directive", tokens[i].line, tokens[i].column);
+                    }
+
+                    // Check for extra characters after the closing bracket/quote
+                    const char *end = NULL;
+                    if (hasClosingBracket) {
+                        end = strrchr(lexeme, '>');
+                    } else if (hasClosingQuote) {
+                        end = strrchr(lexeme, '\"');
+                    }
+
+                    if (end != NULL && *(end + 1) != '\0' && !isspace(*(end + 1))) {
+                        reportError("Extra characters after header name in #include directive", tokens[i].line, tokens[i].column);
+                    }
+                } 
+                else {
+                    // Check for typos in '#include' by checking characters after '#'
+                    const char *expectedInclude = "include";
+                    int typoCount = 0, len = strlen(lexeme);
+
+                    for (int j = 1, k = 0; j < len && k < 7; j++, k++) {
+                        if (j >= len || lexeme[j] != expectedInclude[k]) {
+                            typoCount++;
+                        }
+                    }
+
+                    // Additional check for shorter strings
+                    if (strlen(lexeme) < 8) {
+                        typoCount += (8 - strlen(lexeme));
+                    }
+
+                    if (typoCount > 0 && typoCount <= 2) { // Allowing up to 2 typos
+                        reportError("Possible typo in '#include' directive", tokens[i].line, tokens[i].column);
+                    }
+
+                    // Additional case-insensitive check
+                    if (strncasecmp(lexeme, "#include", 8) == 0) {
+                        reportError("'#include' directive must be lowercase", tokens[i].line, tokens[i].column);
+                    }
+
+                    // Special check for '#iclude' or similar cases (Missing letters)
+                    if (strlen(lexeme) > 1 && strstr(lexeme, "iclude") != NULL || strstr(lexeme, "icnlude") != NULL || strstr(lexeme, "inlude") != NULL || strstr(lexeme, "inclde") != NULL || strstr(lexeme, "includ") != NULL || strstr(lexeme, "iclde") != NULL || strstr(lexeme, "iclude") != NULL || strstr(lexeme, "nclude") != NULL || strstr(lexeme, "incude") != NULL || strstr(lexeme, "inlude") != NULL ){
+                        reportError("Possible typo: Did you mean '#include'?", tokens[i].line, tokens[i].column);
+                    }
                 }
-                
-                // Check for correct opening and closing brackets/quotes
-                bool hasOpeningBracket = strstr(lexeme, "<") != NULL;
-                bool hasClosingBracket = strstr(lexeme, ">") != NULL;
-                bool hasOpeningQuote = strstr(lexeme, "\"") != NULL;
-                bool hasClosingQuote = (strstr(lexeme, "\"") != strrchr(lexeme, '\"'));
-                
-                if (hasOpeningBracket && !hasClosingBracket) {
-                    reportError("Missing closing '>' in #include directive", tokens[i].line, tokens[i].column);
-                } else if (!hasOpeningBracket && hasClosingBracket) {
-                    reportError("Missing opening '<' in #include directive", tokens[i].line, tokens[i].column);
-                } else if (hasOpeningQuote && !hasClosingQuote) {
-                    reportError("Missing closing '\"' in #include directive", tokens[i].line, tokens[i].column);
-                } else if (!hasOpeningQuote && !hasOpeningBracket) {
-                    reportError("Missing file name in #include directive", tokens[i].line, tokens[i].column);
-                } else if (hasOpeningBracket && hasOpeningQuote) {
-                    reportError("Cannot use both angle brackets and quotes in #include directive", tokens[i].line, tokens[i].column);
-                }
-                
-                // Check for extra characters after the closing bracket/quote
-                const char *end = NULL;
-                if (hasClosingBracket) {
-                    end = strrchr(lexeme, '>');
-                } else if (hasClosingQuote) {
-                    end = strrchr(lexeme, '\"');
-                }
-                
-                if (end != NULL && *(end + 1) != '\0' && !isspace(*(end + 1))) {
-                    reportError("Extra characters after header name in #include directive", tokens[i].line, tokens[i].column);
+            } else {
+                // Check if it's a preprocessor directive with a missing '#'
+                if (strncmp(lexeme, "include", 7) == 0) {
+                    reportError("Missing '#' before 'include' directive", tokens[i].line, tokens[i].column);
                 }
             }
         }
     }
 }
- 
+
+
+
  /**
   * Identifies functions (both user-defined and standard library)
   */
@@ -977,6 +1069,7 @@ void checkIncludeDirectiveFormat() {
                          functions[functionCount++] = func;
                      }
                  }
+                 
              }
          }
      }
@@ -1492,7 +1585,7 @@ void checkPrintfErrors() {
 void checkScanfErrors() {
     printf("Checking for scanf errors...\n");
     
-    for (int i = 0; i < tokenCount - 2; i++) {
+    for (int i = 0; i < tokenCount - 1; i++) {
         // Look for scanf function calls
         if (tokens[i].type == TOKEN_IDENTIFIER && 
             strcmp(tokens[i].lexeme, "scanf") == 0 &&
@@ -1739,7 +1832,6 @@ void printResults() {
 for (int i = 0; i < errorCount; i++) {
     // Comprehensive check for header/include errors
     if (strstr(errors[i].message, "header") != NULL || 
-        strstr(errors[i].message, "#include<stdio.h>") != NULL ||
         strstr(errors[i].message, "stdio") != NULL ||
         strstr(errors[i].message, "include") != NULL ||
         strstr(errors[i].message, "No such file") != NULL ||

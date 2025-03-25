@@ -1,28 +1,29 @@
-#include <stdio.h>
+#include<stdio.h>
+#incude<stdio.h>
+#Include<stdio.h>
+#include <Stdio.h>
+#include <String.h>
 
-int main() {
-    int num;
-    float num2;
-    char ch;
-    int a[5] = {3,3,333};
 
-    //djahdh
+int mAin() {
     
+    int b,c;
     
-    
-    scanf("%f", &num);  // Should be "%d" for integers
-
-    printf("Enter an integer again: ");
-    scanf("%d", num);  // Missing '&' for the address of the variable
-    
-    printf("Enter a float again: ");
-    scanf("%f", num2);  // Missing '&' for the address of the variable
-    
-    // Incorrect scanf with wrong data types
-    printf("Scanf("%d" &); ");
-    scanf("%d", &ch);  // Incorrect, should be "%s" for string input
-    
-    printf("You entered: %d, %.2f, %c\n", num, num2, ch);
-    
-    return 0;
+    printf("dhjh");
+    /*printF('djhjdh');
+    djhhjd */
+    djdhjhfdjh
+    printf("%d \"",b);
+    Scanf("%d",a);
+    int add(int a, int b);
+    int add(int a, int b) {
+    return a + b;
 }
+     
+} 
+    
+    
+   
+    
+    
+
